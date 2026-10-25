@@ -1,0 +1,13 @@
+{
+  "name": "balance-flight",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline aircraft weight and balance demonstrator",
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "node scripts/check.mjs"
+  },
+  "engines": { "node": ">=20" }
+}

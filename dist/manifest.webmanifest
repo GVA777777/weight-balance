@@ -1,0 +1,17 @@
+{
+  "id": "./",
+  "name": "Balance — вес и центровка",
+  "short_name": "Balance",
+  "description": "Офлайн деморасчёт веса и центровки HS-125-800XP",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6f7",
+  "theme_color": "#142a34",
+  "icons": [
+    { "src": "./icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

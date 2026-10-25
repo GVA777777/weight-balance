@@ -1,0 +1,66 @@
+name: Deploy GitHub Pages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Check and prepare static site
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+
+      # No npm install/ci: the application and its checks have no dependencies.
+      - name: Test
+        run: npm test
+
+      - name: Check application
+        run: npm run check
+
+      - name: Prepare Pages artifact
+        run: npm run build:pages
+
+      - name: Upload static site
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: artifacts/pages
+
+  deploy:
+    name: Publish to GitHub Pages
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Show published URL
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: printf '### Published GitHub Pages site\n\n%s\n' "$PAGE_URL" >> "$GITHUB_STEP_SUMMARY"

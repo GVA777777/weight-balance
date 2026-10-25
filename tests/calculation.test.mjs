@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { aircraft, airframe, newFlight } from '../dist/src/profiles.js';
-import { calculate, distributeRemaining, fromLbs, toLbs, parseWeight } from '../dist/src/calculate.js';
+import { calculate, distributeRefuel, distributeRemaining, fromLbs, toLbs, parseWeight } from '../dist/src/calculate.js';
 import { restore, serialize } from '../dist/src/storage.js';
 import { printSheet } from '../dist/src/print.js';
 const compute=input=>calculate(input,aircraft,airframe);
@@ -14,6 +14,11 @@ test('photographed loading reproduces the mass, moment and CG datum',()=>{
   assert.equal(r.takeoff.weight,26365);assert.equal(Math.round(r.takeoff.moment),21961);
   close(r.takeoff.arm,.8329582021619572);close(r.takeoff.mac,29.50526767885231,1e-6);
   assert.equal(r.landing,null);assert.equal(r.burn,null);
+});
+test('refuel fills the ventral tank first, the rest goes to wings',()=>{
+  assert.deepEqual(distributeRefuel(1000,1496),{ventral:1000,wing:0});
+  assert.deepEqual(distributeRefuel(9295,1496),{ventral:1496,wing:7799});
+  assert.deepEqual(distributeRefuel(0,1496),{ventral:0,wing:0});
 });
 test('ventral tank is consumed before wing fuel',()=>{
   assert.deepEqual(distributeRemaining(7799,1496,9295),{wing:7799,ventral:1496});

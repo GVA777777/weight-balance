@@ -25,6 +25,11 @@ export function distributeRemaining(wing, ventral, remaining) {
   return { wing: Math.min(wing, remaining), ventral: Math.max(0, remaining - wing) };
 }
 
+/** Refuel order: ventral first, the rest goes to wings. All values are lbs. */
+export function distributeRefuel(total, ventralMax) {
+  return { ventral: Math.min(total, ventralMax), wing: Math.max(0, total - ventralMax) };
+}
+
 /** @returns {CalculationResult} */
 export function calculate(input, model, profile) {
   const errors = {}, warnings = [], rows = [];

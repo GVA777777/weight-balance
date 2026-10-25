@@ -1,5 +1,5 @@
 // Bump this version for every release that changes a cached application file.
-const CACHE = 'balance-flight-v4';
+const CACHE = 'balance-flight-v5';
 const ASSETS = ['./','./index.html','./styles.css','./src/app.js','./src/profiles.js','./src/calculate.js','./src/storage.js','./src/graphics.js','./src/print.js','./manifest.webmanifest','./icons/icon.svg','./icons/icon-192.png','./icons/icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil((async()=>{

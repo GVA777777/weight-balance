@@ -11,3 +11,4 @@
 @media print{dialog::backdrop{display:none!important}}
 @page{size:A4 portrait;margin:10mm}
 @media print{html,body{background:white!important;margin:0!important;padding:0!important;color:black!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}.app-shell,dialog,.toast,noscript{display:none!important}#print-output{display:block!important}#print-output .sheet{width:190mm;min-height:0;height:auto;box-shadow:none;margin:0;padding:4mm 0 0;break-inside:avoid;page-break-inside:avoid}.sheet *{color:black!important}.sheet-table tr{break-inside:avoid}.sheet-signature{margin-top:7mm}}
+.refuel-field{margin-bottom:14px}.refuel-field .refuel-lbs{font-size:10px;color:#27404a;font-weight:600;font-variant-numeric:tabular-nums;margin-top:6px;display:block}

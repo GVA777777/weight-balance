@@ -1,5 +1,5 @@
 import { aircraft, airframe, newFlight } from './profiles.js';
-import { calculate, fromLbs, parseWeight } from './calculate.js';
+import { KG_PER_LB, calculate, distributeRefuel, fromLbs, parseWeight } from './calculate.js';
 import { cabinSvg, envelopeSvg, escapeHtml as e } from './graphics.js';
 import { STORAGE_KEY, serialize, restore } from './storage.js';
 import { printSheet } from './print.js';
@@ -18,10 +18,20 @@ function weightField(id,label,value,helper='',compact=false) {
   return `<div class="weight-field ${compact?'compact-field':''}">${compact?'':`<label for="weight-${id}">${e(label)}</label>`}<div class="weight-input-wrap"><input id="weight-${id}" data-weight="${id}" inputmode="decimal" autocomplete="off" type="text" value="${editValue(value)}" placeholder="${id==='remaining'?'Введите остаток':'0'}" aria-describedby="error-${id}${helper?` help-${id}`:''}"><span>${unit()}</span></div>${helper?`<span class="field-helper" id="help-${id}">${e(helper)}</span>`:''}<span class="field-error" id="error-${id}"></span></div>`;
 }
 
+// Total refuel is always entered in kg and derived from the tanks, so it needs no own state.
+const tankTotal=()=>Number.isFinite(state.fuel.wing)||Number.isFinite(state.fuel.ventral)?(state.fuel.wing||0)+(state.fuel.ventral||0):NaN;
+const refuelLbs=lbs=>`= ${format(lbs)} lbs`;
+function refuelField() {
+  const total=tankTotal();
+  return `<div class="weight-field"><label for="refuel-kg">Общая заправка</label><div class="weight-input-wrap"><input id="refuel-kg" data-refuel inputmode="decimal" autocomplete="off" type="text" value="${Number.isFinite(total)?String(Number((total*KG_PER_LB).toFixed(1))):''}" placeholder="0" aria-describedby="refuel-lbs help-refuel error-refuel"><span>кг</span></div><span class="refuel-lbs" id="refuel-lbs">${refuelLbs(total)}</span><span class="field-helper" id="help-refuel">Сначала подфюзеляжный бак, остаток — в крыльевые</span><span class="field-error" id="error-refuel"></span></div>`;
+}
+function syncRefuel() {const total=tankTotal();$('#refuel-kg').value=Number.isFinite(total)?String(Number((total*KG_PER_LB).toFixed(1))):'';$('#refuel-lbs').textContent=refuelLbs(total);}
+
 function renderForm() {
   $('#flight-fields').innerHTML = [['date','Дата','date'],['number','Номер рейса','text'],['route','Маршрут полёта','text'],['captain','КВС','text']].map(([id,label,type])=>`<div class="flight-field"><label for="flight-${id}">${label}</label><input id="flight-${id}" data-flight="${id}" type="${type}" value="${e(state.flight[id])}" placeholder="${{number:'Например, RА027',route:'Откуда — куда',captain:'Фамилия, инициалы'}[id]??''}" ${type==='text'?'maxlength="100"':''}></div>`).join('');
   const groups=[['crew','ЭКИПАЖ','01'],['passenger','ПАССАЖИРЫ','02'],['baggage','БАГАЖ И ГАРДЕРОБ','03']];
   $('#load-fields').innerHTML=groups.map(([group,label,index])=>`<div class="load-group"><div class="load-group-title"><span>${label}</span><span>${index}</span></div>${aircraft.stations.filter(s=>s.group===group).map(s=>`<div class="load-row" data-row="${s.id}"><div class="station-label"><span class="station-symbol ${state.loads[s.id]>0?'occupied':''}" data-symbol="${s.id}">${s.short}</span><div><label for="weight-${s.id}">${e(s.label)}</label><small>${s.max?`Макс. ${weight(s.max)} ${unit()} · `:''}плечо ${format(s.arm,1)} ft</small></div></div>${weightField(s.id,s.label,state.loads[s.id],'',true)}</div>`).join('')}</div>`).join('');
+  $('#refuel-field').innerHTML=refuelField();
   $('#fuel-fields').innerHTML=weightField('wing','Крыльевые баки',state.fuel.wing,`Максимум ${weight(aircraft.tanks.wing.max)} ${unit()}`)+weightField('ventral','Подфюзеляжный бак',state.fuel.ventral,`Максимум ${weight(aircraft.tanks.ventral.max)} ${unit()}`);
   $('#remaining-field').innerHTML=weightField('remaining','Общий остаток топлива',state.fuel.remaining,'Остаток во всех баках к моменту посадки');
   document.querySelectorAll('[data-unit]').forEach(button=>{const active=button.dataset.unit===state.unit;button.classList.toggle('selected',active);button.setAttribute('aria-pressed',String(active));});
@@ -63,7 +73,15 @@ function toast(message) {clearTimeout(toastTimer);$('#toast').textContent=messag
 document.addEventListener('input',event=>{
   const el=event.target;
   if(el.dataset.flight){state.flight[el.dataset.flight]=el.value;save();return;}
-  if(el.dataset.weight){const id=el.dataset.weight,value=parseWeight(el.value,state.unit);if(id in state.fuel)state.fuel[id]=value;else state.loads[id]=value;renderDerived();save();}
+  if('refuel' in el.dataset){
+    const lbs=parseWeight(el.value,'kg'),invalid=Number.isNaN(lbs);
+    el.setAttribute('aria-invalid',String(invalid));$('#error-refuel').textContent=invalid?'Общая заправка: введите вес в кг':'';
+    if(invalid)return;
+    Object.assign(state.fuel,lbs===null?{wing:null,ventral:null}:distributeRefuel(lbs,aircraft.tanks.ventral.max));
+    $('#weight-wing').value=editValue(state.fuel.wing);$('#weight-ventral').value=editValue(state.fuel.ventral);$('#refuel-lbs').textContent=refuelLbs(lbs??NaN);
+    renderDerived();save();return;
+  }
+  if(el.dataset.weight){const id=el.dataset.weight,value=parseWeight(el.value,state.unit);if(id in state.fuel)state.fuel[id]=value;else state.loads[id]=value;if(id==='wing'||id==='ventral')syncRefuel();renderDerived();save();}
 });
 document.addEventListener('click',event=>{
   const button=event.target.closest('[data-unit]');
